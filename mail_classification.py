@@ -33,14 +33,10 @@ except pymysql.Error as e:
 MAX_TOP_KEYWORDS_GLOBAL = 50
 MIN_SIMILARITY_THRESHOLD_FOR_CONSIDERATION = 0.2
 FINAL_CLASSIFICATION_THRESHOLD = 0.5
-
-
 # -----------------
 
 def get_category_id_by_name(category_name):
-    """
-    Categories 테이블에서 category_name에 해당하는 category_id를 조회
-    """
+    # Categories 테이블에서 category_name에 해당하는 category_id를 조회
     try:
         cursor.execute("SELECT category_id FROM Categories WHERE category_name = %s", (category_name,))
         result = cursor.fetchone()
@@ -54,10 +50,8 @@ def get_category_id_by_name(category_name):
 
 
 def update_mail_category(user_id, mail_num, classified_value):
-    """
-    mail_info 테이블의 'categori' 컬럼에 분류된 값을 업데이트
-    classified_value는 category_id (INT) 또는 'Unclassified' (STR) 등
-    """
+    # mail_info 테이블의 'categori' 컬럼에 분류된 값을 업데이트
+    # classified_value는 category_id (INT) 또는 'Unclassified' (STR) 등
     try:
         cursor.execute(
             f"UPDATE mail_info SET categori = %s WHERE user_id = %s AND mailnum = %s",
@@ -72,9 +66,7 @@ def update_mail_category(user_id, mail_num, classified_value):
 
 
 def extract_meaningful_tokens(text):
-    """
-    텍스트에서 명사, 고유 명사를 추출
-    """
+    # 텍스트에서 명사, 고유 명사를 추출
     if not text:
         return []
 
@@ -189,7 +181,7 @@ if __name__ == "__main__":
         display_title = title if len(title) < 70 else title[:67] + "..."
         print(f"  Mail Title: '{display_title}'")
 
-        # --- 0. 이미 분류된 메일은 건너뛰기 ---
+        # --- 이미 분류된 메일은 건너뛰기 ---
         if current_categori is not None and str(current_categori).strip().lower() != "unclassified":
             print(f"  Mail (MailNum: {mailnum}) already classified as '{current_categori}'. Skipping.")
             continue
@@ -197,7 +189,7 @@ if __name__ == "__main__":
 
         classified_by_any_tier = False  # 어떤 분류 단계에서든 성공했는지 플래그
 
-        # --- 1. (0차 분류 실패 시) 메일 제목에 DB에 등록된 특별 키워드 포함 시 1차 분류 시도 ---
+        # --- 메일 제목에 DB에 등록된 특별 키워드 포함 시 1차 분류(특별 키워드 - 제목) 시도 ---
         mail_title_lower = title.lower() if title else ""
 
         for special_keyword_text, category_name_from_map in special_keywords_map.items():
@@ -220,7 +212,7 @@ if __name__ == "__main__":
         if classified_by_any_tier:
             continue
 
-        # --- 2. (1차 분류 실패 시) 발신자 이메일 주소 (sentBy)에 공식 도메인/메일 주소가 포함되는지 2차 분류 시도 ---
+        # --- (1차 분류 실패 시) 발신자 이메일 주소 (sentBy)에 공식 도메인/메일 주소가 포함되는지 2차 분류 시도 ---
         if sentBy_email:
             sentBy_email_lower = sentBy_email.lower()
             for registered_domain_or_email, category_name_from_map in official_domains_map.items():
@@ -246,7 +238,7 @@ if __name__ == "__main__":
         else:
             print(f"  2차 분류 (공식 메일 주소/도메인): 발신자 이메일 주소 (sentBy) 없음. 다음 분류 시도.")
 
-        # --- 3. (1, 2차 분류 모두 실패 시) 키워드 기반 분류 실행 (기존 로직) ---
+        # --- (1, 2차 분류 모두 실패 시) 키워드 기반 분류 실행 (기존 로직) ---
         combined_mail_text = (title if title else "") + " " + (detail if detail else "")
         extracted_keywords_for_mail = extract_meaningful_tokens(combined_mail_text)
 
